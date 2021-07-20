@@ -2,8 +2,10 @@ module Execute where
 
 import           Data.Map                       ( Map )
 import qualified Data.Map                      as Map
-import           Lib
-
+import           AST
+import Errors
+import Control.Monad.Except
+import Data.Functor
 newtype Stack a =
   Stack
     { _values :: [a]
@@ -33,35 +35,46 @@ instance Foldable Stack where
   foldMap f (Stack l) = foldMap f l
   foldr f b (Stack l) = foldr f b l
 
-eval :: Element -> Element
-eval val@(StringElement _                        ) = val
-eval val@(IntElement    _                        ) = val
-eval val@(FloatElement  _                        ) = val
-eval (    QuotedElement e                        ) = e
-eval (    ListElement   (AtomElement func : args)) = apply func $ map eval args
+extractValue :: ThrowsError a -> a
+extractValue (Right v) = v
+extractValue (Left e) = error $ show e
 
-apply :: String -> [Element] -> Element
+eval :: Element -> ThrowsError Element
+eval val@(StringElement _                        ) = return val
+eval val@(IntElement    _                        ) = return val
+eval val@(FloatElement  _                        ) = return val
+eval (    QuotedElement e                        ) = return e
+eval v@(VectorElement _) = return v
+eval (    ListElement   (AtomElement func : args)) = mapM eval args >>= apply func
+
+apply :: String -> [Element] -> ThrowsError Element
 apply func args =
-  maybe (StringElement "unknown function") ($ args)
-    $ Map.lookup func primitiveFunctions
+  maybe (throwError $ UnboundVar "Unknown function " func)
+        ($ args)
+        (Map.lookup func primitiveFunctions)
 
-coerceToNum :: Element -> Double
-coerceToNum (IntElement    i  ) = fromInteger i
-coerceToNum (FloatElement  f  ) = f
-coerceToNum (StringElement s  ) = read s
+coerceToNum :: Element -> ThrowsError Double
+coerceToNum (IntElement    i  ) = return $ fromInteger i
+coerceToNum (FloatElement  f  ) = return f
+coerceToNum (StringElement s  ) = let parsed = reads s in
+                                    if null parsed
+                                       then throwError $ TypeMismatch "number" $ StringElement s
+                                          else return $ fst $ head parsed
 coerceToNum (ListElement   [a]) = coerceToNum a
-coerceToNum _                   = 0
+coerceToNum illegal                   = throwError $ TypeMismatch "number" illegal
 
 isInt :: Double -> Bool
 isInt x = x == fromInteger (round x)
 
-numBinaryOp :: (Double -> Double -> Double) -> [Element] -> Element
+numBinaryOp :: (Double -> Double -> Double) -> [Element] -> ThrowsError Element
+numBinaryOp _ [] = throwError $ InvalidArgCount 2 []
+numBinaryOp _ single@[_] = throwError $ InvalidArgCount 2 single
 numBinaryOp op params = do
-  let result = foldl1 op $ map coerceToNum params
-  if isInt result then IntElement $ floor result else FloatElement result
+  let toAST e = if isInt e then IntElement $ floor e else FloatElement e
+  mapM coerceToNum params <&> (toAST . foldl1 op)
 
 
-primitiveFunctions :: Map String ([Element] -> Element)
+primitiveFunctions :: Map String ([Element] -> ThrowsError Element)
 primitiveFunctions = Map.fromList
   [ ("+", numBinaryOp (+))
   , ("-", numBinaryOp (-))

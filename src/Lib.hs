@@ -2,20 +2,9 @@ module Lib where
 
 import           Text.ParserCombinators.Parsec
                                          hiding ( spaces )
-
-data Element
-  = AtomElement String
-  | IntElement Integer
-  | FloatElement Double
-  | StringElement String
-  | VectorElement [Element]
-  | KeywordElement String
-  | ListElement [Element]
-  | QuotedElement Element
-  deriving (Eq)
-
-instance Show Element where
-  show = showElement
+import Control.Monad.Except
+import Errors
+import AST
 
 symbol :: Parser Char
 symbol = oneOf "?!#$&|+-/*^@-_<=>" -- symbols that can be used in atoms
@@ -73,17 +62,7 @@ parseExpr =
     <|> parseVec
     <|> parseQuoted
 
-readExpr :: String -> Element
+readExpr :: String -> ThrowsError Element
 readExpr input = case parse parseExpr "lisp" input of
-  Left  err -> StringElement $ "No match: " ++ show err
-  Right val -> val
-
-showElement :: Element -> String
-showElement (AtomElement    s) = s
-showElement (IntElement     i) = show i
-showElement (FloatElement   f) = show f
-showElement (StringElement  s) = "\"" ++ s ++ "\""
-showElement (VectorElement  v) = "[" ++ unwords (map showElement v) ++ "]"
-showElement (ListElement    v) = "(" ++ unwords (map showElement v) ++ ")"
-showElement (KeywordElement k) = ':' : k
-showElement (QuotedElement  e) = '\'' : showElement e
+  Left  err -> throwError $ ParseError err
+  Right val -> return val

@@ -25,6 +25,8 @@ source-repository head
 
 library
   exposed-modules:
+      AST
+      Errors
       Execute
       Lib
   other-modules:
@@ -34,6 +36,7 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , mtl
     , parsec
   default-language: Haskell2010
 
@@ -48,6 +51,7 @@ executable lisp-exe
       base >=4.7 && <5
     , containers
     , lisp
+    , mtl
     , parsec
   default-language: Haskell2010
 
@@ -63,5 +67,6 @@ test-suite lisp-test
       base >=4.7 && <5
     , containers
     , lisp
+    , mtl
     , parsec
   default-language: Haskell2010
