@@ -24,7 +24,10 @@ parseAtom = do
   first <- letter <|> symbol
   rest  <- many (letter <|> symbol <|> digit)
   let atom = first : rest
-  return $ AtomElement atom
+  return $ case atom of
+    "true" -> BoolElement True
+    "false" -> BoolElement False
+    _ ->  AtomElement atom
 
 parseNumber :: Parser Element
 parseNumber = do
@@ -36,7 +39,7 @@ parseNumber = do
 parseList :: Parser Element
 parseList = do
   _ <- char '('
-  x <- ListElement <$> sepBy parseExpr spaces
+  x <- ListElement <$> parseExpr `sepBy` spaces
   _ <- char ')'
   return x
 
@@ -50,8 +53,10 @@ parseVec = do
 parseQuoted :: Parser Element
 parseQuoted = do
   _ <- char '\''
-  x <- parseExpr
-  return $ QuotedElement x
+  QuotedElement <$> parseExpr
+
+--parseBool :: Parser Element
+--parseBool = BoolElement $ (const True) <$> string "true" <|> const False <$> string "false"
 
 parseExpr :: Parser Element
 parseExpr =

@@ -11,6 +11,7 @@ data Element
   | KeywordElement String
   | ListElement [Element]
   | QuotedElement Element
+  | BoolElement Bool
   deriving (Eq)
 
 instance Show Element where
@@ -20,6 +21,7 @@ showElement :: Element -> String
 showElement (AtomElement    s) = s
 showElement (IntElement     i) = show i
 showElement (FloatElement   f) = show f
+showElement (BoolElement b) = if b then "true" else "false"
 showElement (StringElement  s) = "\"" ++ s ++ "\""
 showElement (VectorElement  v) = "[" ++ unwords (map showElement v) ++ "]"
 showElement (ListElement    v) = "(" ++ unwords (map showElement v) ++ ")"
