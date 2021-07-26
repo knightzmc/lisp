@@ -1,9 +1,9 @@
 module Main where
 
 import System.Environment
-import Lib
-import Execute
-import Errors
+import Lisp.Parse
+import Lisp.Execute
+import Lisp.Errors
 
 main :: IO ()
 main = do

@@ -7,8 +7,8 @@ cabal-version: 1.12
 name:           lisp
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/lisp#readme>
-homepage:       https://github.com/githubuser/lisp#readme
-bug-reports:    https://github.com/githubuser/lisp/issues
+homepage:       https://github.com/knightzmc/lisp#readme
+bug-reports:    https://github.com/knightzmc/lisp/issues
 author:         Author name here
 maintainer:     example@example.com
 copyright:      2021 Author name here
@@ -21,14 +21,15 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/lisp
+  location: https://github.com/knightzmc/lisp
 
 library
   exposed-modules:
       AST
-      Errors
-      Execute
-      Lib
+      Lisp.AST
+      Lisp.Errors
+      Lisp.Execute
+      Lisp.Parse
   other-modules:
       Paths_lisp
   hs-source-dirs:

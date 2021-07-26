@@ -1,6 +1,6 @@
 -- |
 
-module AST where
+module Lisp.AST where
 
 data Element
   = AtomElement String
