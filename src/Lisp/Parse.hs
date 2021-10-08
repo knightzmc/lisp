@@ -1,10 +1,11 @@
 module Lisp.Parse where
 
-import           Text.ParserCombinators.Parsec
-                                         hiding ( spaces )
 import Control.Monad.Except
-import Lisp.Errors
 import Lisp.AST
+import Lisp.Errors
+import Text.ParserCombinators.Parsec hiding
+  ( spaces,
+  )
 
 symbol :: Parser Char
 symbol = oneOf "?!#$&|+-/*^@-_<=>" -- symbols that can be used in atoms
@@ -14,20 +15,20 @@ spaces = skipMany1 space
 
 parseString :: Parser Element
 parseString = do
-  _    <- char '"'
+  _ <- char '"'
   body <- many (noneOf "\"")
-  _    <- char '"'
+  _ <- char '"'
   return $ String body
 
 parseAtom :: Parser Element
 parseAtom = do
   first <- letter <|> symbol
-  rest  <- many (letter <|> symbol <|> digit)
+  rest <- many (letter <|> symbol <|> digit)
   let atom = first : rest
   return $ case atom of
     "true" -> Bool True
     "false" -> Bool False
-    _ ->  Atom atom
+    _ -> Atom atom
 
 parseNumber :: Parser Element
 parseNumber = do
@@ -69,5 +70,5 @@ parseExpr =
 
 readExpr :: String -> ThrowsError Element
 readExpr input = case parse parseExpr "lisp" input of
-  Left  err -> throwError $ ParseError err
+  Left err -> throwError $ ParseError err
   Right val -> return val
