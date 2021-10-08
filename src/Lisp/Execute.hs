@@ -104,6 +104,13 @@ headElem [Vector (a : _)] = return a
 headElem [Vector []] = throwError $ RuntimeError "List is empty"
 headElem badArgList = throwError $ InvalidArgCount 1 badArgList
 
+tailElem :: [Element] -> ThrowsError Element
+tailElem [List (_ : xs)] = return $ List xs
+tailElem [List []] = throwError $ RuntimeError "List is empty"
+tailElem [Vector (_ : xs)] = return $ Vector xs
+tailElem [Vector []] = throwError $ RuntimeError "List is empty"
+tailElem badArgList = throwError $ InvalidArgCount 1 badArgList
+
 primitiveFunctions :: Map String ([Element] -> ThrowsError Element)
 primitiveFunctions =
   Map.fromList
@@ -113,5 +120,6 @@ primitiveFunctions =
       ("*", numBinaryOp (*)),
       ("^", numBinaryOp (**)),
       ("=", compareElements),
-      ("head", headElem)
+      ("head", headElem),
+      ("tail", tailElem)
     ]
