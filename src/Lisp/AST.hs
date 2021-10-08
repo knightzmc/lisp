@@ -1,27 +1,26 @@
 module Lisp.AST where
 
 data Element
-  = AtomElement String
-  | IntElement Integer
-  | FloatElement Double
-  | StringElement String
-  | VectorElement [Element]
-  | KeywordElement String
-  | ListElement [Element]
-  | QuotedElement Element
-  | BoolElement Bool
+  = Atom String
+  | Int Integer
+  | Float Double
+  | String String
+  | Bool Bool
+  | Vector [Element]
+  | List [Element]
+  | Quote Element
   deriving (Eq)
 
 instance Show Element where
   show = showElement
 
 showElement :: Element -> String
-showElement (AtomElement    s) = s
-showElement (IntElement     i) = show i
-showElement (FloatElement   f) = show f
-showElement (BoolElement b) = if b then "true" else "false"
-showElement (StringElement  s) = "\"" ++ s ++ "\""
-showElement (VectorElement  v) = "[" ++ unwords (map showElement v) ++ "]"
-showElement (ListElement    v) = "(" ++ unwords (map showElement v) ++ ")"
-showElement (KeywordElement k) = ':' : k
-showElement (QuotedElement  e) = '\'' : showElement e
+showElement (Atom    s) = s
+showElement (Int     i) = show i
+showElement (Float   f) = show f
+showElement (Bool b) = if b then "true" else "false"
+showElement (String  s) = "\"" ++ s ++ "\""
+showElement (Vector  v) = "[" ++ unwords (map showElement v) ++ "]"
+showElement (List    v) = "(" ++ unwords (map showElement v) ++ ")"
+--showElement (Keyword k) = ':' : k
+showElement (Quote  e) = '\'' : showElement e

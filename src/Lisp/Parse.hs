@@ -17,7 +17,7 @@ parseString = do
   _    <- char '"'
   body <- many (noneOf "\"")
   _    <- char '"'
-  return $ StringElement body
+  return $ String body
 
 parseAtom :: Parser Element
 parseAtom = do
@@ -25,35 +25,35 @@ parseAtom = do
   rest  <- many (letter <|> symbol <|> digit)
   let atom = first : rest
   return $ case atom of
-    "true" -> BoolElement True
-    "false" -> BoolElement False
-    _ ->  AtomElement atom
+    "true" -> Bool True
+    "false" -> Bool False
+    _ ->  Atom atom
 
 parseNumber :: Parser Element
 parseNumber = do
   nums <- many1 (digit <|> char '.')
   if '.' `elem` nums
-    then return $ FloatElement $ read nums
-    else return $ IntElement $ read nums
+    then return $ Float $ read nums
+    else return $ Int $ read nums
 
 parseList :: Parser Element
 parseList = do
   _ <- char '('
-  x <- ListElement <$> parseExpr `sepBy` spaces
+  x <- List <$> parseExpr `sepBy` spaces
   _ <- char ')'
   return x
 
 parseVec :: Parser Element
 parseVec = do
   _ <- char '['
-  x <- VectorElement <$> sepBy parseExpr spaces
+  x <- Vector <$> sepBy parseExpr spaces
   _ <- char ']'
   return x
 
 parseQuoted :: Parser Element
 parseQuoted = do
   _ <- char '\''
-  QuotedElement <$> parseExpr
+  Quote <$> parseExpr
 
 --parseBool :: Parser Element
 --parseBool = BoolElement $ (const True) <$> string "true" <|> const False <$> string "false"

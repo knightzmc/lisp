@@ -39,20 +39,19 @@ extractValue :: ThrowsError a -> a
 extractValue (Right v) = v
 extractValue (Left e) = error $ show e
 
-
 eval :: Element -> ThrowsError Element
-eval val@(StringElement _) = return val
-eval val@(IntElement _) = return val
-eval val@(FloatElement _) = return val
-eval val@(BoolElement _) = return val
-eval (QuotedElement e) = return e
-eval v@(VectorElement _) = return v
-eval (ListElement [AtomElement "if", condition, true, false]) = do
+eval val@(String _) = return val
+eval val@(Int _) = return val
+eval val@(Float _) = return val
+eval val@(Bool _) = return val
+eval (Quote e) = return e
+eval v@(Vector _) = return v
+eval (List [Atom "if", condition, true, false]) = do
   result <- eval condition
   eval $ case result of
-    BoolElement True -> true
+    Bool True -> true
     _ -> false
-eval (ListElement (AtomElement func : args)) = mapM eval args >>= apply func -- function application
+eval (List (Atom func : args)) = mapM eval args >>= apply func -- function application
 
 apply :: String -> [Element] -> ThrowsError Element
 apply func args =
@@ -62,14 +61,14 @@ apply func args =
     (Map.lookup func primitiveFunctions)
 
 coerceToNum :: Element -> ThrowsError Double
-coerceToNum (IntElement i) = return $ fromInteger i
-coerceToNum (FloatElement f) = return f
-coerceToNum (StringElement s) =
+coerceToNum (Int i) = return $ fromInteger i
+coerceToNum (Float f) = return f
+coerceToNum (String s) =
   let parsed = reads s
    in if null parsed
-        then throwError $ TypeMismatch "number" $ StringElement s
+        then throwError $ TypeMismatch "number" $ String s
         else return $ fst $ head parsed
-coerceToNum (ListElement [a]) = coerceToNum a
+coerceToNum (List [a]) = coerceToNum a
 coerceToNum illegal = throwError $ TypeMismatch "number" illegal
 
 isInt :: Double -> Bool
@@ -79,23 +78,23 @@ numBinaryOp :: (Double -> Double -> Double) -> [Element] -> ThrowsError Element
 numBinaryOp _ [] = throwError $ InvalidArgCount 2 []
 numBinaryOp _ single@[_] = throwError $ InvalidArgCount 2 single
 numBinaryOp op params = do
-  let toAST e = if isInt e then IntElement $ floor e else FloatElement e
+  let toAST e = if isInt e then Int $ floor e else Float e
   mapM coerceToNum params <&> (toAST . foldl1 op)
 
 compareElements :: [Element] -> ThrowsError Element
-compareElements [a, b] = return $ BoolElement $ compare2Elements a b
+compareElements [a, b] = return $ Bool $ compare2Elements a b
 compareElements elements = throwError $ InvalidArgCount 2 elements
 
 compare2Elements :: Element -> Element -> Bool
-compare2Elements (StringElement s1) (StringElement s2) = s1 == s2
-compare2Elements (IntElement s1) (IntElement s2) = s1 == s2
-compare2Elements (FloatElement s1) (FloatElement s2) = s1 == s2
-compare2Elements (AtomElement a1) (AtomElement a2) = a1 == a2
-compare2Elements (BoolElement b1) (BoolElement b2) = b1 == b2
-compare2Elements (ListElement l1) (ListElement l2) = all (uncurry compare2Elements) $ zip l1 l2
-compare2Elements (VectorElement l1) (VectorElement l2) = all (uncurry compare2Elements) $ zip l1 l2
-compare2Elements (StringElement s) e2 = show e2 == s
-compare2Elements e1 (StringElement s) = show e1 == s
+compare2Elements (String s1) (String s2) = s1 == s2
+compare2Elements (Int s1) (Int s2) = s1 == s2
+compare2Elements (Float s1) (Float s2) = s1 == s2
+compare2Elements (Atom a1) (Atom a2) = a1 == a2
+compare2Elements (Bool b1) (Bool b2) = b1 == b2
+compare2Elements (List l1) (List l2) = all (uncurry compare2Elements) $ zip l1 l2
+compare2Elements (Vector l1) (Vector l2) = all (uncurry compare2Elements) $ zip l1 l2
+compare2Elements (String s) e2 = show e2 == s
+compare2Elements e1 (String s) = show e1 == s
 compare2Elements _ _ = False
 
 primitiveFunctions :: Map String ([Element] -> ThrowsError Element)
