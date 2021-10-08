@@ -97,6 +97,13 @@ compare2Elements (String s) e2 = show e2 == s
 compare2Elements e1 (String s) = show e1 == s
 compare2Elements _ _ = False
 
+headElem :: [Element] -> ThrowsError Element
+headElem [List (a : _)] = return a
+headElem [List []] = throwError $ RuntimeError "List is empty"
+headElem [Vector (a : _)] = return a
+headElem [Vector []] = throwError $ RuntimeError "List is empty"
+headElem badArgList = throwError $ InvalidArgCount 1 badArgList
+
 primitiveFunctions :: Map String ([Element] -> ThrowsError Element)
 primitiveFunctions =
   Map.fromList
@@ -105,5 +112,6 @@ primitiveFunctions =
       ("/", numBinaryOp (/)),
       ("*", numBinaryOp (*)),
       ("^", numBinaryOp (**)),
-      ("=", compareElements)
+      ("=", compareElements),
+      ("head", headElem)
     ]
