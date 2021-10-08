@@ -5,53 +5,29 @@ import Data.Functor
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Lisp.AST
+import Lisp.Environment
 import Lisp.Errors
-
-newtype Stack a = Stack
-  { _values :: [a]
-  }
-  deriving (Show, Eq)
-
-empty :: Stack a
-empty = Stack []
-
-singleton :: a -> Stack a
-singleton a = Stack [a]
-
-fromList :: [a] -> Stack a
-fromList = Stack
-
-pop :: Stack a -> (Maybe a, Stack a)
-pop (Stack []) = (Nothing, empty)
-pop (Stack (x : xs)) = (Just x, fromList xs)
-
-push :: a -> Stack a -> Stack a
-push e (Stack l) = Stack (e : l)
-
-instance Functor Stack where
-  fmap f (Stack l) = fromList $ fmap f l
-
-instance Foldable Stack where
-  foldMap f (Stack l) = foldMap f l
-  foldr f b (Stack l) = foldr f b l
 
 extractValue :: ThrowsError a -> a
 extractValue (Right v) = v
 extractValue (Left e) = error $ show e
 
-eval :: Element -> ThrowsError Element
-eval val@(String _) = return val
-eval val@(Int _) = return val
-eval val@(Float _) = return val
-eval val@(Bool _) = return val
-eval (Quote e) = return e
-eval v@(Vector _) = return v
-eval (List [Atom "if", condition, true, false]) = do
-  result <- eval condition
-  eval $ case result of
+eval :: Env -> Element -> IOThrowsError Element
+eval env val@(String _) = return val
+eval env val@(Int _) = return val
+eval env val@(Float _) = return val
+eval env val@(Bool _) = return val
+eval env (Quote e) = return e
+eval env v@(Vector _) = return v
+eval env (Atom name) = getVar env name
+eval env (List [Atom "set!", Atom var, val]) = eval env val >>= setVar env var
+eval env (List [Atom "def", Atom var, val]) = eval env val >>= defineVar env var
+eval env (List [Atom "if", condition, true, false]) = do
+  result <- eval env condition
+  eval env $ case result of
     Bool True -> true
     _ -> false
-eval (List (Atom func : args)) = mapM eval args >>= apply func -- function application
+eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func -- function application
 
 apply :: String -> [Element] -> ThrowsError Element
 apply func args =
