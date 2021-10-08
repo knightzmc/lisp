@@ -39,6 +39,7 @@ extractValue :: ThrowsError a -> a
 extractValue (Right v) = v
 extractValue (Left e) = error $ show e
 
+
 eval :: Element -> ThrowsError Element
 eval val@(StringElement _) = return val
 eval val@(IntElement _) = return val
@@ -46,6 +47,11 @@ eval val@(FloatElement _) = return val
 eval val@(BoolElement _) = return val
 eval (QuotedElement e) = return e
 eval v@(VectorElement _) = return v
+eval (ListElement [AtomElement "if", condition, true, false]) = do
+  result <- eval condition
+  eval $ case result of
+    BoolElement True -> true
+    _ -> false
 eval (ListElement (AtomElement func : args)) = mapM eval args >>= apply func -- function application
 
 apply :: String -> [Element] -> ThrowsError Element
