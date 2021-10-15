@@ -1,11 +1,11 @@
 module Lisp.Repl where
 
-import Lisp.Errors (trapError)
+import Lisp.Environment (Env, liftThrows, nullEnv, runIOThrows)
 import Lisp.Execute
 import Lisp.Parse (readExpr)
+import System.CPUTime
 import System.IO
-import Lisp.Environment (runIOThrows, liftThrows, Env, nullEnv)
-import Control.Monad.Cont (liftM)
+import Text.Printf
 
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
@@ -17,7 +17,15 @@ evalString :: Env -> String -> IO String
 evalString env expr = runIOThrows $ fmap show $ liftThrows (readExpr expr) >>= eval env
 
 evalAndPrint :: Env -> String -> IO ()
-evalAndPrint env expr =  evalString env expr >>= putStrLn
+evalAndPrint env expr = evalString env expr >>= putStrLn
+
+evalTimeAndPrint :: Env -> String -> IO ()
+evalTimeAndPrint env expr = do
+  start <- getCPUTime
+  evalAndPrint env expr
+  end <- getCPUTime
+  let diff = fromIntegral (end - start) / (10 ^ 9)
+  printf "Computation time: %0.3f ms\n" (diff :: Double)
 
 until_ :: Monad m => (a -> Bool) -> m a -> (a -> m ()) -> m ()
 until_ condition prompt action = do
@@ -30,4 +38,4 @@ runOne :: String -> IO ()
 runOne expr = nullEnv >>= flip evalAndPrint expr
 
 runRepl :: IO ()
-runRepl = nullEnv >>= until_ (== "quit") (readPrompt "Lisp>>> ") . evalAndPrint
+runRepl = nullEnv >>= until_ (== "quit") (readPrompt "Lisp>>> ") . evalTimeAndPrint

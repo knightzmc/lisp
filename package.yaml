@@ -24,6 +24,7 @@ dependencies:
 - parsec
 - containers
 - mtl
+- time
 
 library:
   source-dirs: src

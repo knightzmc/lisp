@@ -25,11 +25,12 @@ source-repository head
 
 library
   exposed-modules:
-      AST
       Lisp.AST
+      Lisp.Environment
       Lisp.Errors
       Lisp.Execute
       Lisp.Parse
+      Lisp.Repl
   other-modules:
       Paths_lisp
   hs-source-dirs:
@@ -39,6 +40,7 @@ library
     , containers
     , mtl
     , parsec
+    , time
   default-language: Haskell2010
 
 executable lisp-exe
@@ -54,6 +56,7 @@ executable lisp-exe
     , lisp
     , mtl
     , parsec
+    , time
   default-language: Haskell2010
 
 test-suite lisp-test
@@ -70,4 +73,5 @@ test-suite lisp-test
     , lisp
     , mtl
     , parsec
+    , time
   default-language: Haskell2010
